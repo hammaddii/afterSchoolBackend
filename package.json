@@ -1,0 +1,16 @@
+{
+  "name": "afterschoolbackend",
+  "version": "1.0.0",
+  "description": "backend stuff for coursework",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "hammaddii",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.21.1",
+    "mongodb": "^3.6.3",
+    "mongoose": "^8.8.2"
+  }
+}
