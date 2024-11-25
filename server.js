@@ -5,7 +5,6 @@ const MongoClient = require('mongodb').MongoClient;
 app.use(express.json());
 app.set('port', 3000);
 
-// CORS setup
 app.use((req, res, next) => {
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader("Access-Control-Allow-Credentials", "true");
@@ -19,10 +18,9 @@ const uri = 'mongodb+srv://admin:wednesday@coursework.nwofz.mongodb.net/Classwor
 
 MongoClient.connect(uri, { useNewUrlParser: true, useUnifiedTopology: true })
     .then(client => {
-        db = client.db('Classwork'); // The database we want to work with
+        db = client.db('Classwork');
         console.log('Connected to MongoDB');
 
-        // Start the server once the connection is successful
         app.listen(3000, () => {
             console.log('Express.js server is running at http://localhost:3000');
         });
@@ -37,9 +35,8 @@ app.get('/', (req, res) => {
     res.send('Select a collection, e.g., /collection/clubs');
 });
 
-// Route to get all clubs from MongoDB 'clubs' collection
+// Route to get from MongoDB clubs collection
 app.get('/collection/clubs', (req, res, next) => {
-    // Ensure the database and collection are available
     if (!db) {
         return res.status(500).send('Database not initialized');
     }
