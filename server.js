@@ -56,3 +56,33 @@ app.get('/collection/clubs', (req, res, next) => {
         res.send(results);
     });
 });
+
+// Route to post order information into the orders collection
+app.post('/collection/orders', (req, res, next) => {
+    if (!db) {
+        return res.status(500).send('Database not initialized');
+    }
+    const ordersCollection = db.collection('orders');
+
+    // Validate incoming order data
+    const { name, phoneNumber, clubs } = req.body;
+
+    if (!name || !phoneNumber || !Array.isArray(clubs) || clubs.length === 0) {
+        return res.status(400).send('Invalid order data. Ensure name, phone number, and club information are provided.');
+    }
+
+    const orderData = {
+        name,
+        phoneNumber,
+        clubs,
+    };
+
+    // Insert the order into the database
+    ordersCollection.insertOne(orderData, (err, result) => {
+        if (err) {
+            console.error('Error inserting order:', err);
+            return next(err);
+        }
+        res.status(201).send({ message: 'Order saved successfully', orderId: result.insertedId });
+    });
+});
