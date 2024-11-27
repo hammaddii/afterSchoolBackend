@@ -70,31 +70,39 @@ app.post('/collection/orders', async (req, res, next) => {
         return res.status(400).send('Invalid order data. Ensure name, phone number, and club information are provided.');
     }
 
-    const orderData = {
-        name,
-        phoneNumber,
-        clubs,
-    };
+    const clubsWithNames = [];
+    for (const club of clubs) {
+        const clubData = await db.collection('clubs').findOne({ id: club.clubId });
+        if (clubData) {
+            clubsWithNames.push({
+                clubId: club.clubId,
+                clubName: clubData.subject,
+                spaces: club.spaces,
+            });
 
-    try {
-        const result = await ordersCollection.insertOne(orderData);
-        const orderId = result.insertedId;
-
-        for (const club of clubs) {
-            const { clubId, spaces } = club;
-
-            const updateResponse = await fetch(`http://localhost:3000/collection/clubs/${clubId}/updateSpace`, {
+            // Update club available space after the order
+            await fetch(`http://localhost:3000/collection/clubs/${club.clubId}/updateSpace`, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ spaces }),
+                body: JSON.stringify({ spaces: club.spaces }),
             });
-
-            if (!updateResponse.ok) {
-                throw new Error(`Failed to update space for Club ID ${clubId}`);
-            }
+        } else {
+            return res.status(404).send(`Club with ID ${club.clubId} not found`);
         }
+    }
+
+    const orderData = {
+        name,
+        phoneNumber,
+        clubs: clubsWithNames,
+    };
+
+    try {
+        // Insert into the orders collection
+        const result = await ordersCollection.insertOne(orderData);
+        const orderId = result.insertedId;
 
         res.status(201).send({ message: 'Order saved successfully', orderId: orderId });
 
