@@ -66,7 +66,7 @@ app.post('/collection/orders', async (req, res, next) => {
     const ordersCollection = db.collection('orders');
     const clubsCollection = db.collection('clubs');
 
-    // Validate incoming order data
+    // Validating incoming order data
     const { name, phoneNumber, clubs } = req.body;
 
     if (!name || !phoneNumber || !Array.isArray(clubs) || clubs.length === 0) {
@@ -76,21 +76,17 @@ app.post('/collection/orders', async (req, res, next) => {
     try {
         const clubDetails = await Promise.all(clubs.map(async (club) => {
             const clubData = await clubsCollection.findOne({ id: club.clubId });
-            if (clubData) {
-                return {
-                    clubId: club.clubId,
-                    clubName: clubData.subject,
-                    spaces: club.spaces
-                };
-            } else {
-                return {
-                    clubId: club.clubId,
-                    clubName: "Unknown Club",
-                    spaces: club.spaces
-                };
+            if (!clubData) {
+                throw new Error(`Club with ID ${club.clubId} not found`);
             }
+            return {
+                clubId: club.clubId,
+                clubName: clubData.subject,
+                spaces: club.spaces
+            };
         }));
 
+        // Preparing order data
         const orderData = {
             name,
             phoneNumber,
@@ -98,15 +94,10 @@ app.post('/collection/orders', async (req, res, next) => {
         };
 
         // Insert the order into the database
-        ordersCollection.insertOne(orderData, (err, result) => {
-            if (err) {
-                console.error('Error inserting order:', err);
-                return next(err);
-            }
-            res.status(201).send({ message: 'Order saved successfully', orderId: result.insertedId });
-        });
+        const result = await ordersCollection.insertOne(orderData);
+        res.status(201).send({ message: 'Order saved successfully', orderId: result.insertedId });
     } catch (error) {
-        console.error('Error processing order:', error);
-        res.status(500).send('Error processing order');
+        console.error('Error processing order:', error.message);
+        res.status(400).send(error.message);
     }
 });
