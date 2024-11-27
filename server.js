@@ -64,40 +64,74 @@ app.post('/collection/orders', async (req, res, next) => {
     }
 
     const ordersCollection = db.collection('orders');
-    const clubsCollection = db.collection('clubs');
-
-    // Validating incoming order data
     const { name, phoneNumber, clubs } = req.body;
 
     if (!name || !phoneNumber || !Array.isArray(clubs) || clubs.length === 0) {
         return res.status(400).send('Invalid order data. Ensure name, phone number, and club information are provided.');
     }
 
+    const orderData = {
+        name,
+        phoneNumber,
+        clubs,
+    };
+
     try {
-        const clubDetails = await Promise.all(clubs.map(async (club) => {
-            const clubData = await clubsCollection.findOne({ id: club.clubId });
-            if (!clubData) {
-                throw new Error(`Club with ID ${club.clubId} not found`);
-            }
-            return {
-                clubId: club.clubId,
-                clubName: clubData.subject,
-                spaces: club.spaces
-            };
-        }));
-
-        // Preparing order data
-        const orderData = {
-            name,
-            phoneNumber,
-            clubs: clubDetails
-        };
-
-        // Insert the order into the database
         const result = await ordersCollection.insertOne(orderData);
-        res.status(201).send({ message: 'Order saved successfully', orderId: result.insertedId });
+        const orderId = result.insertedId;
+
+        for (const club of clubs) {
+            const { clubId, spaces } = club;
+
+            const updateResponse = await fetch(`http://localhost:3000/collection/clubs/${clubId}/updateSpace`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ spaces }),
+            });
+
+            if (!updateResponse.ok) {
+                throw new Error(`Failed to update space for Club ID ${clubId}`);
+            }
+        }
+
+        res.status(201).send({ message: 'Order saved successfully', orderId: orderId });
+
     } catch (error) {
-        console.error('Error processing order:', error.message);
-        res.status(400).send(error.message);
+        console.error('Error processing order:', error);
+        res.status(500).send('Error processing order');
+    }
+});
+
+app.put('/collection/clubs/:clubId/updateSpace', async (req, res, next) => {
+    if (!db) {
+        return res.status(500).send('Database not initialized');
+    }
+
+    const clubsCollection = db.collection('clubs'); 
+    const { clubId } = req.params;
+    const { spaces } = req.body;
+
+    if (!spaces || spaces <= 0) {
+        return res.status(400).send('Invalid number of spaces. Must be greater than 0.');
+    }
+
+    try {
+        // Find and update the club's available space
+        const updateResult = await clubsCollection.updateOne(
+            { id: parseInt(clubId) }, 
+            { $inc: { availableSpace: -spaces } }
+        );
+
+        if (updateResult.matchedCount === 0) {
+            return res.status(404).send(`Club with ID ${clubId} not found`);
+        }
+
+        res.status(200).send({ message: `Successfully updated available space for Club ID ${clubId}` });
+
+    } catch (error) {
+        console.error('Error updating available space:', error);
+        res.status(500).send('Error updating available space');
     }
 });
