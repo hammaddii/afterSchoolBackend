@@ -163,13 +163,11 @@ app.put('/postman/collection/clubs/:clubId/updateSpace', async (req, res, next) 
             return res.status(404).send(`Club with ID ${clubId} not found`);
         }
 
-        if (club.availableSpace < spaces) {
-            return res.status(400).send(`Not enough available spaces. Only ${club.availableSpace} spaces left.`);
-        }
+        const newAvailableSpace = club.availableSpace + spaces;
 
         const updateResult = await clubsCollection.updateOne(
             { id: parseInt(clubId) },
-            { $inc: { availableSpace: -spaces } }
+            { $set: { availableSpace: newAvailableSpace } }
         );
 
         if (updateResult.matchedCount === 0) {
