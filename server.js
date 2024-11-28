@@ -1,6 +1,8 @@
 const express = require('express');
 const app = express();
 const MongoClient = require('mongodb').MongoClient;
+const path = require('path');
+const fs = require('fs');
 
 // Logger Middleware
 const loggerMiddleware = (req, res, next) => {
@@ -19,6 +21,24 @@ app.use((req, res, next) => {
     res.setHeader("Access-Control-Allow-Methods", "GET,HEAD,OPTIONS,POST,PUT");
     res.setHeader("Access-Control-Allow-Headers", "Access-Control-Allow-Headers, Origin,Accept, X-Requested-With, Content-Type, Access-Control-Request-Method, Access-Control-Request-Headers");
     next();
+});
+
+// Static file route to serve images
+const imagesDirectory = path.join(__dirname, 'images');
+app.use('/images', express.static(imagesDirectory));
+
+// Route to handle missing image files
+app.get('/images/:imageName', (req, res, next) => {
+    const imagePath = path.join(imagesDirectory, req.params.imageName);
+
+    // Check if the file exists
+    fs.access(imagePath, fs.constants.F_OK, (err) => {
+        if (err) {
+            return res.status(404).send('Image not found');
+        }
+        // Send the image file if it exists
+        res.sendFile(imagePath);
+    });
 });
 
 let db;
