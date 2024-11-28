@@ -146,19 +146,18 @@ app.put('/collection/clubs/:clubId/updateSpace', async (req, res, next) => {
         return res.status(500).send('Database not initialized');
     }
 
-    const clubsCollection = db.collection('clubs'); 
+    const clubsCollection = db.collection('clubs');
     const { clubId } = req.params;
     const { spaces } = req.body;
 
-    if (!spaces || spaces <= 0) {
-        return res.status(400).send('Invalid number of spaces. Must be greater than 0.');
+    if (spaces === undefined || spaces <= 0) {
+        return res.status(400).send('Invalid number of spaces. Must be a number greater than 0.');
     }
 
     try {
-        // Update the club's available space
         const updateResult = await clubsCollection.updateOne(
-            { id: parseInt(clubId) }, 
-            { $inc: { availableSpace: -spaces } }
+            { id: parseInt(clubId) },
+            { $set: { availableSpace: spaces } }
         );
 
         if (updateResult.matchedCount === 0) {
