@@ -155,14 +155,26 @@ app.put('/collection/clubs/:clubId/updateSpace', async (req, res, next) => {
     }
 
     try {
-        const updateResult = await clubsCollection.updateOne(
-            { id: parseInt(clubId) },
-            { $set: { availableSpace: spaces } }
-        );
+        // Find the current available space for the club
+        const club = await clubsCollection.findOne({ id: parseInt(clubId) });
 
-        if (updateResult.matchedCount === 0) {
+        if (!club) {
             return res.status(404).send(`Club with ID ${clubId} not found`);
         }
+
+        // Calculate the new available space
+        const newAvailableSpace = club.availableSpace - spaces;
+
+        // Ensure the new available space is not negative
+        if (newAvailableSpace < 0) {
+            return res.status(400).send('Not enough available space to fulfill this order');
+        }
+
+        // Update the available space for the club
+        const updateResult = await clubsCollection.updateOne(
+            { id: parseInt(clubId) },
+            { $set: { availableSpace: newAvailableSpace } }
+        );
 
         res.status(200).send({ message: `Successfully updated available space for Club ID ${clubId}` });
 
