@@ -2,8 +2,16 @@ const express = require('express');
 const app = express();
 const MongoClient = require('mongodb').MongoClient;
 
+// Logger Middleware
+const loggerMiddleware = (req, res, next) => {
+    const timestamp = new Date().toISOString();
+    console.log(`[${timestamp}] ${req.method} ${req.url}`);
+    next();
+};
+
 app.use(express.json());
 app.set('port', 3000);
+app.use(loggerMiddleware);
 
 app.use((req, res, next) => {
     res.setHeader('Access-Control-Allow-Origin', 'https://hammaddii.github.io', '*');
@@ -112,6 +120,7 @@ app.post('/collection/orders', async (req, res, next) => {
     }
 });
 
+// Route to update available space for clubs
 app.put('/collection/clubs/:clubId/updateSpace', async (req, res, next) => {
     if (!db) {
         return res.status(500).send('Database not initialized');
@@ -126,7 +135,7 @@ app.put('/collection/clubs/:clubId/updateSpace', async (req, res, next) => {
     }
 
     try {
-        // Find and update the club's available space
+        // Update the club's available space
         const updateResult = await clubsCollection.updateOne(
             { id: parseInt(clubId) }, 
             { $inc: { availableSpace: -spaces } }
