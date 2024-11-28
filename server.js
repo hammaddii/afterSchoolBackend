@@ -148,7 +148,7 @@ app.put('/collection/clubs/:clubId/updateSpace', async (req, res, next) => {
 
     const clubsCollection = db.collection('clubs');
     const { clubId } = req.params;
-    const { spaces, type } = req.body; 
+    const { spaces, type } = req.body;
 
     if (spaces === undefined || spaces < 0) {
         return res.status(400).send('Invalid number of spaces. Must be a non-negative number.');
@@ -162,7 +162,7 @@ app.put('/collection/clubs/:clubId/updateSpace', async (req, res, next) => {
         }
 
         let updateResult;
-        
+
         if (type === "set") {
             updateResult = await clubsCollection.updateOne(
                 { id: parseInt(clubId) },
