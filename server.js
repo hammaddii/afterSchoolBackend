@@ -148,7 +148,7 @@ app.put('/collection/clubs/:clubId/updateSpace', async (req, res, next) => {
 
     const clubsCollection = db.collection('clubs');
     const { clubId } = req.params;
-    const { spaces } = req.body;
+    const { spaces, type } = req.body; 
 
     if (spaces === undefined || spaces < 0) {
         return res.status(400).send('Invalid number of spaces. Must be a non-negative number.');
@@ -161,16 +161,32 @@ app.put('/collection/clubs/:clubId/updateSpace', async (req, res, next) => {
             return res.status(404).send(`Club with ID ${clubId} not found`);
         }
 
-        const updateResult = await clubsCollection.updateOne(
-            { id: parseInt(clubId) },
-            { $set: { availableSpace: spaces } }
-        );
+        let updateResult;
+        
+        if (type === "set") {
+            updateResult = await clubsCollection.updateOne(
+                { id: parseInt(clubId) },
+                { $set: { availableSpace: spaces } }
+            );
+        } else if (type === "decrease") {
+            if (spaces > club.availableSpace) {
+                return res.status(400).send('Not enough available space to fulfill this order.');
+            }
+
+            updateResult = await clubsCollection.updateOne(
+                { id: parseInt(clubId) },
+                { $inc: { availableSpace: -spaces } }
+            );
+        } else {
+            return res.status(400).send('Invalid action type. Use "set" or "decrease".');
+        }
 
         if (updateResult.modifiedCount === 0) {
             return res.status(404).send(`Club with ID ${clubId} not found`);
         }
 
         res.status(200).send({ message: `Successfully updated available space for Club ID ${clubId}` });
+
     } catch (error) {
         console.error('Error updating available space:', error);
         res.status(500).send('Error updating available space');
