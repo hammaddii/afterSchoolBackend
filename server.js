@@ -1,10 +1,13 @@
+// Importing required modules
 const express = require('express');
 const app = express();
 const MongoClient = require('mongodb').MongoClient;
 
+// Middleware to parse JSON and set port for the server
 app.use(express.json());
 app.set('port', 3000);
 
+// CORS Middleware to allow cross-origin requests
 app.use((req, res, next) => {
     res.setHeader('Access-Control-Allow-Origin', 'https://hammaddii.github.io', '*');
     res.setHeader("Access-Control-Allow-Credentials", "true");
@@ -13,6 +16,7 @@ app.use((req, res, next) => {
     next();
 });
 
+// MongoDB connection setup
 let db;
 const uri = 'mongodb+srv://admin:wednesday@coursework.nwofz.mongodb.net/Classwork?retryWrites=true&w=majority';
 
@@ -21,6 +25,7 @@ MongoClient.connect(uri, { useNewUrlParser: true, useUnifiedTopology: true })
         db = client.db('Classwork');
         console.log('Connected to MongoDB');
 
+        // Start the Express.js server
         app.listen(3000, () => {
             console.log('Express.js server is running at http://localhost:3000');
         });
@@ -30,12 +35,12 @@ MongoClient.connect(uri, { useNewUrlParser: true, useUnifiedTopology: true })
         process.exit(1); // Exit if the connection fails
     });
 
-// Default route
+// Default route to send initial response
 app.get('/', (req, res) => {
     res.send('Select a collection, e.g., /collection/clubs');
 });
 
-// Route to get from MongoDB clubs collection
+// Route to fetch clubs from MongoDB
 app.get('/collection/clubs', (req, res, next) => {
     if (!db) {
         return res.status(500).send('Database not initialized');
@@ -66,6 +71,7 @@ app.post('/collection/orders', async (req, res, next) => {
     const ordersCollection = db.collection('orders');
     const { name, phoneNumber, clubs } = req.body;
 
+    // Validate the order data
     if (!name || !phoneNumber || !Array.isArray(clubs) || clubs.length === 0) {
         return res.status(400).send('Invalid order data. Ensure name, phone number, and club information are provided.');
     }
@@ -100,7 +106,7 @@ app.post('/collection/orders', async (req, res, next) => {
     };
 
     try {
-        // Insert into the orders collection
+        // Insert the order into the orders collection
         const result = await ordersCollection.insertOne(orderData);
         const orderId = result.insertedId;
 
@@ -112,6 +118,7 @@ app.post('/collection/orders', async (req, res, next) => {
     }
 });
 
+// Route to update available space of a specific club (PUT method)
 app.put('/collection/clubs/:clubId/updateSpace', async (req, res, next) => {
     if (!db) {
         return res.status(500).send('Database not initialized');
@@ -121,6 +128,7 @@ app.put('/collection/clubs/:clubId/updateSpace', async (req, res, next) => {
     const { clubId } = req.params;
     const { spaces } = req.body;
 
+    // Validate the spaces data
     if (!spaces || spaces <= 0) {
         return res.status(400).send('Invalid number of spaces. Must be greater than 0.');
     }
@@ -144,6 +152,7 @@ app.put('/collection/clubs/:clubId/updateSpace', async (req, res, next) => {
     }
 });
 
+// Route to update available space of a specific club (Postman testing route)
 app.put('/postman/collection/clubs/:clubId/updateSpace', async (req, res, next) => {
     if (!db) {
         return res.status(500).send('Database not initialized');
@@ -153,6 +162,7 @@ app.put('/postman/collection/clubs/:clubId/updateSpace', async (req, res, next) 
     const { clubId } = req.params;
     const { spaces } = req.body;
 
+    // Validate the spaces data
     if (!spaces || spaces <= 0) {
         return res.status(400).send('Invalid number of spaces. Must be greater than 0.');
     }
@@ -163,6 +173,7 @@ app.put('/postman/collection/clubs/:clubId/updateSpace', async (req, res, next) 
             return res.status(404).send(`Club with ID ${clubId} not found`);
         }
 
+        // Update the club's available space
         const newAvailableSpace = club.availableSpace + spaces;
 
         const updateResult = await clubsCollection.updateOne(
