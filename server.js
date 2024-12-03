@@ -16,6 +16,13 @@ app.use((req, res, next) => {
     next();
 });
 
+// Logger Middleware
+app.use((req, res, next) => {
+    const currentTime = new Date().toISOString();
+    console.log(`[${currentTime}] ${req.method} request to ${req.url}`);
+    next();
+});
+
 // MongoDB connection setup
 let db;
 const uri = 'mongodb+srv://admin:wednesday@coursework.nwofz.mongodb.net/Classwork?retryWrites=true&w=majority';
