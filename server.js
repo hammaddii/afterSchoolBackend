@@ -152,7 +152,7 @@ app.put('/collection/clubs/:clubId/updateSpace', async (req, res, next) => {
     }
 });
 
-// Route to update available space of a specific club (Postman testing route)
+// Route to update available space of a specific club (Postman route)
 app.put('/postman/collection/clubs/:clubId/updateSpace', async (req, res, next) => {
     if (!db) {
         return res.status(500).send('Database not initialized');
