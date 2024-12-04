@@ -69,6 +69,35 @@ app.get('/collection/clubs', (req, res, next) => {
     });
 });
 
+// Route to search clubs based on query parameters
+app.get('/collection/clubs/search', (req, res, next) => {
+    if (!db) {
+        return res.status(500).send('Database not initialized');
+    }
+
+    const searchQuery = req.query.query || '';
+    const clubsCollection = db.collection('clubs');
+
+    console.log(`Searching clubs with query: ${searchQuery}`);
+
+    // Create search criteria based on the search query
+    const searchCriteria = {
+        $or: [
+            { subject: { $regex: searchQuery, $options: 'i' } }, // Case-insensitive search for subject
+            { location: { $regex: searchQuery, $options: 'i' } }  // Case-insensitive search for location
+        ]
+    };
+
+    clubsCollection.find(searchCriteria).toArray((e, results) => {
+        if (e) {
+            console.error('Error searching clubs:', e);
+            return next(e);
+        }
+        console.log('Search results:', results);
+        res.send(results);
+    });
+});
+
 // Route to post order information into the orders collection
 app.post('/collection/orders', async (req, res, next) => {
     if (!db) {
