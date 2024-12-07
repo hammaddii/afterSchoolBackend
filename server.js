@@ -170,8 +170,12 @@ app.put('/collection/clubs/:clubId/updateSpace', async (req, res, next) => {
             return res.status(404).send(`Club with ID ${clubId} not found`);
         }
 
-        // Update the club's available space
-        const newAvailableSpace = club.availableSpace + spaces;
+        // Subtract the booked spaces from available space
+        const newAvailableSpace = club.availableSpace - spaces;
+
+        if (newAvailableSpace < 0) {
+            return res.status(400).send('Not enough spaces available.');
+        }
 
         const updateResult = await clubsCollection.updateOne(
             { id: parseInt(clubId) },
